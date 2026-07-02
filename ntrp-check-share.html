@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>🎾 NTRP 자가진단</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #d29922;
+    --accent-dim: #7a5c17;
+    --green: #3fb950;
+    --blue: #58a6ff;
+    --red: #f85149;
+    --radius: 14px;
+    --mono: 'SF Mono', 'Menlo', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 140px 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #2a2410 0%, #0d1117 100%);
+    padding: 56px 20px 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .header .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .header h1 { font-size: 21px; font-weight: 700; margin-top: 6px; }
+  .header p { font-size: 12.5px; color: var(--text-dim); margin-top: 6px; max-width: 320px; margin-left: auto; margin-right: auto; }
+
+  .wrap { padding: 16px; max-width: 560px; margin: 0 auto; }
+
+  .disclaimer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+  }
+  .disclaimer b { color: var(--text); }
+
+  /* progress */
+  .progress-track {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .progress-bar { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; width: 0%; transition: width 0.35s ease; }
+  .progress-text { font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); margin-top: 5px; text-align: right; }
+
+  .category {
+    margin-bottom: 22px;
+  }
+  .cat-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cat-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .cat-title { font-size: 15px; font-weight: 700; }
+  .cat-sub { font-size: 11.5px; color: var(--text-dim); margin-left: auto; }
+
+  .qrow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    margin-bottom: 6px;
+  }
+  .qtext { font-size: 13px; color: var(--text); margin-bottom: 9px; }
+  .qchoices { display: flex; gap: 6px; }
+  .qchoice {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+  .qchoice[data-sev="0"].active { border-color: var(--green); color: var(--green); background: #142a17; }
+  .qchoice[data-sev="0.5"].active { border-color: var(--accent); color: var(--accent); background: #2a230f; }
+  .qchoice[data-sev="1"].active { border-color: var(--red); color: var(--red); background: #2a1414; }
+
+  /* result panel (sticky bottom) */
+  .result-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    z-index: 60;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+  }
+  .result-bar.hidden { display: none; }
+  .result-row { display: flex; align-items: center; gap: 14px; }
+  .gauge {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    flex-shrink: 0;
+  }
+  .gauge-num { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--accent); }
+  .result-info { flex: 1; min-width: 0; }
+  .result-label { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
+  .result-value { font-size: 15px; font-weight: 700; margin-top: 1px; }
+  .result-note { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .result-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  /* result detail card (shown when button tapped) */
+  .detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 70;
+    padding: 16px;
+    align-items: flex-end;
+  }
+  .detail-overlay.open { display: flex; }
+  .detail-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    padding: 22px 18px calc(22px + env(safe-area-inset-bottom));
+    width: 100%;
+    max-height: 78vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .detail-close {
+    display: block;
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .detail-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .detail-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 18px; }
+
+  .big-gauge-wrap { display: flex; justify-content: center; margin-bottom: 18px; }
+  .big-gauge {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 3px solid var(--accent);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .big-gauge .num { font-family: var(--mono); font-size: 34px; font-weight: 700; color: var(--accent); }
+  .big-gauge .lbl { font-size: 10px; color: var(--text-dim); margin-top: 2px; letter-spacing: 0.5px; }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-row .name { color: var(--text-dim); }
+  .breakdown-row .lvl { font-family: var(--mono); font-weight: 700; }
+  .breakdown-row.weakest .name { color: var(--red); }
+  .breakdown-row.weakest .lvl { color: var(--red); }
+
+  .info-box {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 16px;
+    line-height: 1.65;
+  }
+  .info-box b { color: var(--text); }
+
+  .opt-none {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    padding: 8px;
+    margin-top: 2px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .opt-none.done {
+    color: var(--green);
+    border-color: var(--green);
+    border-style: solid;
+  }
+  .reset-link {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 18px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="eyebrow">Self-Rating Tool</div>
+  <h1>🎾 NTRP 자가진단</h1>
+  <p>문항마다 "아니다 / 가끔 / 자주"를 선택하세요. 자주 그럴수록 해당 항목 등급이 낮아집니다</p>
+</div>
+
+<div class="progress-track">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText">0 / 9 완료</div>
+</div>
+
+<div class="wrap">
+  <div class="disclaimer">
+    <b>재미로 체크하는 약식 버전입니다.</b> 공식 USTA NTRP는 실제 경기 결과로 결정되며, 이 도구는 성인 동호인(2.5~4.0) 구간에 맞춘 셀프 체크입니다. 가볍게 내 수준 감 잡는 용도로만 활용하세요.
+  </div>
+
+  <div id="categories"></div>
+
+  <a class="reset-link" id="resetLink">처음부터 다시 진단하기</a>
+</div>
+
+<div class="result-bar hidden" id="resultBar">
+  <div class="result-row">
+    <div class="gauge"><span class="gauge-num" id="gaugeNum">–</span></div>
+    <div class="result-info">
+      <div class="result-label">예상 NTRP (약점 기준)</div>
+      <div class="result-value" id="resultValue">–</div>
+      <div class="result-note" id="resultNote"></div>
+    </div>
+    <button class="result-btn" id="detailBtn">상세 보기</button>
+  </div>
+</div>
+
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-card">
+    <div class="detail-close"></div>
+    <div class="detail-title">진단 결과</div>
+    <div class="detail-sub">항목별 등급과 최종 판정 근거</div>
+
+    <div class="big-gauge-wrap">
+      <div class="big-gauge">
+        <span class="num" id="bigGaugeNum">–</span>
+        <span class="lbl">ESTIMATED NTRP</span>
+      </div>
+    </div>
+
+    <div id="breakdownList"></div>
+
+    <div class="info-box">
+      <b>왜 평균이 아니라 약점 기준일까?</b><br>
+      NTRP는 가장 잘하는 샷이 아니라 가장 약한 연결고리에 가깝게 매겨집니다. 포핸드가 4.0이어도 백핸드가 3.0이면 실제 경기에서는 3.0~3.5 수준으로 공략당하기 쉽기 때문입니다. 그래서 이 도구는 <b>9개 항목 중 가장 낮은 등급</b>을 최종 판정으로 쓰고, 평균은 참고치로만 보여줍니다. 각 항목은 3문항 × "아니다/가끔/자주" 응답을 합산해 0.25 단위로 계산됩니다.
+    </div>
+  </div>
+</div>
+
+<script>
+const LEVELS = [3.0, 3.5, 4.0];
+
+const CATEGORIES = [
+  {
+    key: 'forehand',
+    title: '포핸드',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '빠른 공이 오면 스윙이 무너지거나 밀린다',
+      '치고 싶은 방향(크로스/다운더라인)으로 못 보낼 때가 많다',
+      '공이 짧게 떨어져서 상대에게 찬스를 준다',
+    ],
+  },
+  {
+    key: 'backhand',
+    title: '백핸드',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '랠리 중 백핸드 쪽으로 공이 오면 부담스럽다',
+      '백핸드는 넘기는 데 급급하고 방향 조절이 어렵다',
+      '상대가 내 백핸드만 집중 공략하면 무너진다',
+    ],
+  },
+  {
+    key: 'spin',
+    title: '스핀 & 구질 변화',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '톱스핀과 플랫을 의도적으로 구분해서 못 친다',
+      '슬라이스로 템포를 바꾸는 플레이를 못 한다',
+      '공 깊이(짧게/깊게)를 의도대로 조절하기 어렵다',
+    ],
+  },
+  {
+    key: 'serve',
+    title: '서브',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '더블폴트가 한 게임에 한 번 이상 나온다',
+      '세컨 서브가 약해서 리턴으로 공격당한다',
+      '서브 코스(와이드/바디/티)를 의도적으로 못 고른다',
+    ],
+  },
+  {
+    key: 'return',
+    title: '리턴',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '빠른 퍼스트 서브가 오면 리턴이 뜨거나 아웃된다',
+      '리턴 방향(상대 네트맨 피하기 등)을 조절하지 못한다',
+      '약한 세컨 서브인데도 공격적으로 리턴하지 못한다',
+    ],
+  },
+  {
+    key: 'volley',
+    title: '발리 & 네트플레이',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '네트 앞에 서면 불안하고 실수할까 걱정된다',
+      '발리가 뜨거나 네트에 걸리는 경우가 많다',
+      '오버헤드(스매시) 찬스에서 자주 실수한다',
+    ],
+  },
+  {
+    key: 'footwork',
+    title: '풋워크 & 코트 커버리지',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '공에 늦게 도착해서 급하게 치는 경우가 많다',
+      '친 다음 제자리로 돌아오는 게 늦다',
+      '좌우로 흔들리면 금방 지치거나 놓친다',
+    ],
+  },
+  {
+    key: 'doubles',
+    title: '복식 포지션 & 팀워크',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '파트너와 가운데 공을 서로 미루거나 부딪힐 뻔한다',
+      '상대 로브에 대한 대처(커버 전환)가 안 된다',
+      '포치(가로채기)를 거의 시도하지 못한다',
+    ],
+  },
+  {
+    key: 'strategy',
+    title: '경기 운영 & 멘탈',
+    sub: '실제 게임 기준으로 체크',
+    options: [
+      '이기고 싶은 마음에 무리한 샷을 치다 범실한다',
+      '중요한 포인트(듀스, 세트포인트)에서 몸이 굳는다',
+      '지고 있을 때 경기 방식을 바꿀 줄 모른다',
+    ],
+  },
+];
+
+const answers = {};   // { catKey: [sevOrNull, sevOrNull, sevOrNull] }, sev = 0 | 0.5 | 1
+const SEV_LABELS = ['아니다', '가끔 그렇다', '자주 그렇다'];
+const SEV_VALUES = [0, 0.5, 1];
+
+function isCatComplete(catKey) {
+  const arr = answers[catKey];
+  return !!arr && arr.every(v => v !== null && v !== undefined);
+}
+
+function computeLevel(catKey) {
+  const arr = answers[catKey];
+  if (!arr) return 4.0;
+  const sum = arr.reduce((a, b) => a + (b || 0), 0); // 0 ~ 3, step 0.5
+  return Math.max(2.5, 4.0 - sum * 0.5); // step 0.25
+}
+
+function render() {
+  const container = document.getElementById('categories');
+  container.innerHTML = CATEGORIES.map((cat, ci) => `
+    <div class="category">
+      <div class="cat-head">
+        <span class="cat-num">${String(ci + 1).padStart(2, '0')}</span>
+        <span class="cat-title">${cat.title}</span>
+        <span class="cat-sub">${cat.sub}</span>
+      </div>
+      ${cat.options.map((text, oi) => `
+        <div class="qrow">
+          <div class="qtext">${text}</div>
+          <div class="qchoices">
+            ${SEV_VALUES.map((sev, si) => `
+              <button class="qchoice" data-cat="${cat.key}" data-idx="${oi}" data-sev="${sev}" onclick="setSeverity('${cat.key}', ${oi}, ${sev})">${SEV_LABELS[si]}</button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+      <div class="opt-none" id="none-${cat.key}" onclick="markNoIssues('${cat.key}')">전부 문제 없음 · 다음 카테고리로</div>
+    </div>
+  `).join('');
+}
+
+function refreshNoneChip(catKey) {
+  const chip = document.getElementById(`none-${catKey}`);
+  const complete = isCatComplete(catKey);
+  const allZero = complete && answers[catKey].every(v => v === 0);
+  chip.classList.toggle('done', allZero);
+  chip.textContent = allZero ? '✓ 문제 없음으로 표시됨' : '전부 문제 없음 · 다음 카테고리로';
+}
+
+function markNoIssues(catKey) {
+  answers[catKey] = [0, 0, 0];
+  document.querySelectorAll(`.qchoice[data-cat="${catKey}"]`).forEach(btn => {
+    btn.classList.toggle('active', parseFloat(btn.dataset.sev) === 0);
+  });
+  refreshNoneChip(catKey);
+  updateProgress();
+}
+
+function setSeverity(catKey, idx, sev) {
+  if (!answers[catKey]) answers[catKey] = [null, null, null];
+  answers[catKey][idx] = sev;
+
+  document.querySelectorAll(`.qchoice[data-cat="${catKey}"][data-idx="${idx}"]`).forEach(btn => {
+    btn.classList.toggle('active', parseFloat(btn.dataset.sev) === sev);
+  });
+  refreshNoneChip(catKey);
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = CATEGORIES.filter(c => isCatComplete(c.key)).length;
+  const total = CATEGORIES.length;
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total} 완료`;
+
+  const resultBar = document.getElementById('resultBar');
+  if (done === total) {
+    const values = CATEGORIES.map(c => computeLevel(c.key));
+    const min = Math.min(...values);
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    document.getElementById('gaugeNum').textContent = min.toFixed(2);
+    document.getElementById('bigGaugeNum').textContent = min.toFixed(2);
+    document.getElementById('resultValue').textContent = `NTRP ${min.toFixed(2)}`;
+    document.getElementById('resultNote').textContent = `전체 평균 ${avg.toFixed(2)} · 약점 기준 판정`;
+    resultBar.classList.remove('hidden');
+    renderBreakdown(min);
+  } else {
+    resultBar.classList.add('hidden');
+  }
+}
+
+function renderBreakdown(min) {
+  const list = document.getElementById('breakdownList');
+  list.innerHTML = CATEGORIES.map(c => {
+    const val = computeLevel(c.key);
+    const sum = answers[c.key].reduce((a, b) => a + (b || 0), 0);
+    const isWeakest = val === min;
+    return `<div class="breakdown-row ${isWeakest ? 'weakest' : ''}">
+      <span class="name">${c.title}${isWeakest ? ' — 약점' : ''} <span style="color:var(--text-dim); font-size:11px;">(심각도 ${sum.toFixed(1)}/3)</span></span>
+      <span class="lvl">${val.toFixed(2)}</span>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('detailBtn').addEventListener('click', () => {
+  document.getElementById('detailOverlay').classList.add('open');
+});
+document.getElementById('detailOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'detailOverlay') e.target.classList.remove('open');
+});
+
+document.getElementById('resetLink').addEventListener('click', () => {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  render();
+  updateProgress();
+  window.scrollTo(0, 0);
+});
+
+render();
+</script>
+</body>
+</html>
